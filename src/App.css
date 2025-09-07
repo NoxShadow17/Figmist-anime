@@ -179,6 +179,88 @@
   }
 }
 
+/* Mobile-specific header improvements */
+@media (max-width: 991.98px) {
+  .navbar-nav {
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  .navbar-nav .nav-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Mobile cart styling */
+  .mobile-cart-link {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.5rem 1rem !important;
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    border-radius: 0.375rem !important;
+    margin: 0.25rem 0 !important;
+    position: relative !important;
+  }
+
+  .mobile-cart-link:hover {
+    background-color: rgba(0, 123, 255, 0.2) !important;
+  }
+
+  .mobile-cart-link .fa-shopping-cart {
+    font-size: 1.2rem !important;
+    margin-right: 0.5rem !important;
+  }
+
+  .mobile-cart-link .badge {
+    position: absolute !important;
+    top: -8px !important;
+    right: -8px !important;
+    transform: none !important;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Theme toggle button mobile */
+  .navbar .btn-outline-secondary {
+    margin-bottom: 0.5rem !important;
+    width: 100% !important;
+    max-width: 120px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Navbar collapse improvements */
+  .navbar-collapse {
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  .dark .navbar-collapse {
+    border-top-color: rgba(255,255,255,0.1);
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 575.98px) {
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+
+  .mobile-cart-link {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .mobile-cart-link .fa-shopping-cart {
+    font-size: 1.4rem !important;
+  }
+}
+
 /* Size selection modal dark mode styles */
 .dark .modal-content {
   background-color: #1e1e1e;

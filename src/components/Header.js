@@ -43,7 +43,7 @@ const Header = () => {
               </button>
             </li>
             <li className="nav-item">
-              <Link className="nav-link position-relative d-flex align-items-center" to="/cart">
+              <Link className="nav-link position-relative d-flex align-items-center mobile-cart-link" to="/cart">
                 <i className="fas fa-shopping-cart fa-lg me-2"></i>
                 <span>Cart</span>
                 {cartItemCount > 0 && (
