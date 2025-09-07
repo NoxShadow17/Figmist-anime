@@ -43,7 +43,7 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleAddToCart = () => {
-    if (product.sizes && !selectedSize) {
+    if (product.sizes && product.category === 'clothing' && !selectedSize) {
       alert('Please select a size before adding to cart.');
       return;
     }
@@ -100,7 +100,7 @@ const ProductDetail = () => {
           </div>
           <p className="mb-4">{product.description}</p>
 
-          {product.sizes && (
+          {product.sizes && product.category === 'clothing' && (
             <div className="mb-3">
               <label className="form-label">Size:</label>
               <select

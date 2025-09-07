@@ -24,13 +24,13 @@ const Products = () => {
   const [selectedSize, setSelectedSize] = useState('');
 
   const handleAddToCart = (product) => {
-    if (product.sizes && product.sizes.length > 0) {
-      // Product has sizes, show size selection modal
+    if (product.sizes && product.sizes.length > 0 && product.category === 'clothing') {
+      // Product is clothing with sizes, show size selection modal
       setSelectedProduct(product);
       setSelectedSize('');
       setShowSizeModal(true);
     } else {
-      // Product doesn't have sizes, add directly
+      // Product doesn't have sizes or isn't clothing, add directly
       addToCart(product, 1, null);
       alert(`${product.name} added to cart!`);
     }
