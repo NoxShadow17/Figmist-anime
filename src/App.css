@@ -473,3 +473,75 @@
     perspective: 1000px;
   }
 }
+
+/* About page mobile improvements */
+@media (max-width: 991.98px) {
+  /* Social media buttons mobile layout */
+  .community-section .d-flex.justify-content-center.gap-3 {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+  }
+
+  .community-section .btn-outline-primary {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+    max-width: 140px !important;
+    margin: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Newsletter section mobile */
+  .community-section .input-group {
+    flex-direction: column !important;
+  }
+
+  .community-section .input-group .form-control {
+    border-radius: 0.375rem 0.375rem 0 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .community-section .input-group .btn {
+    border-radius: 0 0 0.375rem 0.375rem !important;
+    width: 100% !important;
+  }
+
+  /* Community stats mobile */
+  .community-section .row.mt-4 .col-md-4 {
+    margin-bottom: 1.5rem !important;
+  }
+
+  .community-section .text-center h4 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 575.98px) {
+  .community-section .btn-outline-primary {
+    min-width: 100px !important;
+    max-width: 120px !important;
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.5rem !important;
+  }
+
+  .community-section .btn-outline-primary i {
+    font-size: 0.9rem !important;
+  }
+
+  /* About page cards mobile */
+  .about-cards .card {
+    margin-bottom: 1rem !important;
+  }
+
+  .about-cards .card-body {
+    padding: 1.25rem !important;
+  }
+
+  .about-cards .fas {
+    font-size: 2rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+}

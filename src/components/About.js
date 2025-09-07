@@ -18,7 +18,7 @@ const About = () => {
         </div>
       </div>
 
-      <div className="row mb-5">
+      <div className="row mb-5 about-cards">
         <div className="col-md-4 mb-4">
           <div className="card h-100 text-center">
             <div className="card-body">
