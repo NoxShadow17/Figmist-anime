@@ -68,7 +68,7 @@ const Home = () => {
         </video>
 
         {/* Text Overlay */}
-        <div style={{
+        <div className="text-overlay" style={{
           position: 'absolute',
           top: '50%',
           left: '50%',

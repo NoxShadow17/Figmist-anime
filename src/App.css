@@ -397,3 +397,79 @@
 .dark .btn-close {
   filter: invert(1);
 }
+
+/* Home page video mobile improvements */
+@media (max-width: 991.98px) {
+  /* Hero section mobile adjustments */
+  .hero {
+    height: 80vh !important;
+    min-height: 400px;
+  }
+
+  .hero video {
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  /* Text overlay mobile improvements */
+  .hero .text-overlay {
+    padding: 2rem 1.5rem !important;
+    max-width: 90% !important;
+    width: 90% !important;
+    margin: 0 auto !important;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .hero p {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .hero .btn {
+    font-size: 1rem !important;
+    padding: 0.6rem 1.5rem !important;
+  }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 575.98px) {
+  .hero {
+    height: 70vh !important;
+    min-height: 350px;
+  }
+
+  .hero .text-overlay {
+    padding: 1.5rem 1rem !important;
+    max-width: 95% !important;
+    width: 95% !important;
+  }
+
+  .hero h1 {
+    font-size: 2rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .hero p {
+    font-size: 0.9rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .hero .btn {
+    font-size: 0.95rem !important;
+    padding: 0.5rem 1.25rem !important;
+  }
+}
+
+/* Video performance optimizations for mobile */
+@media (max-width: 768px) {
+  .hero video {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+}
