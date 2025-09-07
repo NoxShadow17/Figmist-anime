@@ -1,7 +1,0 @@
-{
-  "buildCommand": "cd figmist && npm install && npm run build",
-  "outputDirectory": "figmist/build",
-  "devCommand": "cd figmist && npm start",
-  "installCommand": "npm install",
-  "framework": null
-}
