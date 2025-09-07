@@ -219,11 +219,7 @@ const Admin = () => {
                     Login
                   </button>
                 </form>
-                <div className="mt-3 text-center">
-                  <small className="text-muted">
-                    Demo credentials: admin@figmist.com / admin123
-                  </small>
-                </div>
+
               </div>
             </div>
           </div>
