@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd figmist && npm run build",
+  "buildCommand": "cd figmist && npm install && npm run build",
   "outputDirectory": "figmist/build",
   "devCommand": "cd figmist && npm start",
-  "installCommand": "npm install && cd figmist && npm install",
-  "framework": "create-react-app"
+  "installCommand": "npm install",
+  "framework": null
 }
