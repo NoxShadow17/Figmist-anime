@@ -25,7 +25,7 @@ const Footer = () => {
             <ul className="list-unstyled">
               <li>
                 <a
-                  href="https://wa.me/919876543210"
+                  href="https://wa.me/919302194019"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white text-decoration-none"
@@ -47,12 +47,12 @@ const Footer = () => {
                 <strong className="text-white">Contact Methods:</strong>
                 <div className="mt-2">
                   <a
-                    href="https://wa.me/919876543210"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-success text-decoration-none d-block"
-                  >
-                    📱 WhatsApp: +91 98765 43210
+                  href="https://wa.me/919302194019"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-success text-decoration-none d-block"
+                >
+                  📱 WhatsApp: +91 93021 94019
                   </a>
                   <a
                     href="https://instagram.com/figmist_store"

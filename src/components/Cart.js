@@ -57,7 +57,7 @@ const Cart = () => {
       `*📝 Notes:* Please confirm availability and delivery details.\n` +
       `Order placed on: ${new Date().toLocaleString('en-IN')}`;
 
-    const whatsappUrl = `https://wa.me/919876543210?text=${encodeURIComponent(orderMessage)}`;
+    const whatsappUrl = `https://wa.me/919302194019?text=${encodeURIComponent(orderMessage)}`;
 
     // Show confirmation
     if (window.confirm(`Order #${orderId} ready!\n\nTotal: ₹${total.toLocaleString('en-IN')}\n\nSend via WhatsApp?`)) {
