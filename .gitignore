@@ -87,3 +87,6 @@ temp/
 # React specific
 src/**/*.test.js
 src/**/*.spec.js
+
+# Old figmist directory (no longer needed)
+figmist/
