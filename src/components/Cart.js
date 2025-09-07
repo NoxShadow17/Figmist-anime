@@ -81,13 +81,13 @@ const Cart = () => {
   }
 
   return (
-    <div className="container py-5">
+    <div className="container py-5 cart-page">
       <h1 className="mb-4">Shopping Cart</h1>
 
       <div className="row">
         <div className="col-lg-8">
           {cartItems.map(item => (
-            <div key={item.id} className="card mb-3">
+            <div key={item.id} className="card mb-3 cart-item-card">
               <div className="card-body">
                 <div className="row align-items-center">
                   <div className="col-md-2">
@@ -139,7 +139,7 @@ const Cart = () => {
 
         <div className="col-lg-4">
           {/* Customer Details Form */}
-          <div className="card mb-3">
+          <div className="card mb-3 customer-details-card">
             <div className="card-body">
               <h5 className="card-title">
                 <i className="fas fa-user me-2"></i>
@@ -202,7 +202,7 @@ const Cart = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="card">
+          <div className="card order-summary-card">
             <div className="card-body">
               <h5 className="card-title">Order Summary</h5>
               <div className="d-flex justify-content-between mb-3">
