@@ -158,12 +158,7 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      <div className="row mt-5">
-        <div className="col-12">
-          <h3>Product Details</h3>
-          <p>{product.details}</p>
-        </div>
-      </div>
+
     </div>
   );
 };
