@@ -101,6 +101,17 @@
   color: #cccccc !important;
 }
 
+/* Featured products pricing dark mode styles */
+.dark .card .text-muted.text-decoration-line-through {
+  color: #adb5bd !important;
+  opacity: 0.8 !important;
+}
+
+.dark .card small.text-muted.text-decoration-line-through {
+  color: #adb5bd !important;
+  opacity: 0.8 !important;
+}
+
 .dark .community-section .form-control {
   background-color: #2d2d2d;
   border-color: #444;
