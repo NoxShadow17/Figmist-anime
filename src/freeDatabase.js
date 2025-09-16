@@ -53,9 +53,17 @@ export const checkAdminSession = () => {
 // Product CRUD operations with Supabase
 export const addProduct = async (productData) => {
   try {
+    // Prepare data for database - handle both old and new schema
+    const dbData = { ...productData };
+
+    // If images array exists, use first image for backward compatibility
+    if (dbData.images && dbData.images.length > 0) {
+      dbData.image = dbData.images[0]; // For old schema compatibility
+    }
+
     const { data, error } = await supabase
       .from('products')
-      .insert([productData])
+      .insert([dbData])
       .select()
 
     if (error) throw error
@@ -137,14 +145,26 @@ export const deleteProduct = async (id) => {
 
 export const getAllProducts = async () => {
   try {
+    // Query Supabase with both image columns for backward compatibility
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    return { success: true, products: data };
+    // Normalize data to ensure images array exists (prefer images array, fallback to single image)
+    const normalizedData = data.map(product => ({
+      ...product,
+      images: product.images || (product.image ? [product.image] : []),
+      sizes: product.sizes || [],
+      inStock: product.inStock !== false,
+      discount_percentage: product.discount_percentage || 0,
+      discount_active: product.discount_active || false,
+      featured: product.featured || false
+    }));
+
+    return { success: true, products: normalizedData };
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
@@ -157,13 +177,24 @@ export const getProductById = async (id) => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
       .eq('id', id)
       .single()
 
     if (error) throw error
 
-    return { success: true, product: data };
+    // Ensure images array exists for compatibility (prefer images array, fallback to single image)
+    const product = {
+      ...data,
+      images: data.images || (data.image ? [data.image] : []),
+      sizes: data.sizes || [],
+      inStock: data.inStock !== false,
+      discount_percentage: data.discount_percentage || 0,
+      discount_active: data.discount_active || false,
+      featured: data.featured || false
+    };
+
+    return { success: true, product };
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
@@ -182,13 +213,24 @@ export const getProductsByCategory = async (category) => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
       .eq('category', category)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    return { success: true, products: data };
+    // Ensure images array exists for compatibility (prefer images array, fallback to single image)
+    const products = data.map(product => ({
+      ...product,
+      images: product.images || (product.image ? [product.image] : []),
+      sizes: product.sizes || [],
+      inStock: product.inStock !== false,
+      discount_percentage: product.discount_percentage || 0,
+      discount_active: product.discount_active || false,
+      featured: product.featured || false
+    }));
+
+    return { success: true, products };
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
@@ -202,13 +244,24 @@ export const getFeaturedProducts = async () => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
       .eq('featured', true)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    return { success: true, products: data };
+    // Ensure images array exists for compatibility (prefer images array, fallback to single image)
+    const products = data.map(product => ({
+      ...product,
+      images: product.images || (product.image ? [product.image] : []),
+      sizes: product.sizes || [],
+      inStock: product.inStock !== false,
+      discount_percentage: product.discount_percentage || 0,
+      discount_active: product.discount_active || false,
+      featured: product.featured || false
+    }));
+
+    return { success: true, products };
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
@@ -221,6 +274,15 @@ export const getFeaturedProducts = async () => {
 // FREE Image Storage - Supabase Storage (50MB FREE)
 export const uploadProductImage = async (file, productId) => {
   try {
+    // Check file size (limit to 500KB per image to prevent localStorage quota issues)
+    const maxSize = 500 * 1024; // 500KB
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use an image smaller than 500KB.`
+      };
+    }
+
     // Option 1: Supabase Storage (FREE up to 50MB)
     // const fileExt = file.name.split('.').pop()
     // const fileName = `${productId}.${fileExt}`
@@ -233,14 +295,14 @@ export const uploadProductImage = async (file, productId) => {
     //   .from('product-images')
     //   .getPublicUrl(fileName)
 
-    // Option 2: Base64 fallback (works immediately)
-    const base64 = await fileToBase64(file);
-    const dataUrl = `data:${file.type};base64,${base64}`;
+    // Option 2: Base64 fallback (works immediately) - compress image
+    const compressedBase64 = await compressImage(file);
+    const dataUrl = `data:${file.type};base64,${compressedBase64}`;
 
     return {
       success: true,
       url: dataUrl,
-      message: 'Image stored locally (FREE!)'
+      message: 'Image compressed and stored locally (FREE!)'
     };
   } catch (error) {
     return { success: false, error: error.message };
@@ -253,6 +315,46 @@ export const deleteProductImage = async (imageUrl) => {
   //   .from('product-images')
   //   .remove([fileName])
   return { success: true, message: 'Local image removed' };
+};
+
+// Helper function to compress image
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      // Calculate new dimensions (max 800px width/height)
+      let { width, height } = img;
+      const maxDimension = 800;
+
+      if (width > height) {
+        if (width > maxDimension) {
+          height = (height * maxDimension) / width;
+          width = maxDimension;
+        }
+      } else {
+        if (height > maxDimension) {
+          width = (width * maxDimension) / height;
+          height = maxDimension;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to base64 with compression (0.8 quality)
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      resolve(compressedBase64);
+    };
+
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 };
 
 // Helper function to convert file to base64
@@ -277,7 +379,7 @@ const initializeData = () => {
         name: 'Naruto T-Shirt',
         price: 2499,
         category: 'clothing',
-        image: '/549e0e7ad7e492ba4766f0bbdfe5e0c8.jpg',
+        images: ['/549e0e7ad7e492ba4766f0bbdfe5e0c8.jpg'],
         description: 'Premium cotton t-shirt featuring Naruto characters.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         inStock: true,

@@ -68,12 +68,54 @@ const ProductDetail = () => {
     <div className="container py-5">
       <div className="row">
         <div className="col-md-6">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="img-fluid rounded"
-            style={{ width: '100%', maxHeight: '500px', objectFit: 'cover' }}
-          />
+          {product.images && product.images.length > 1 ? (
+            // Multiple images - show carousel
+            <div id="productCarousel" className="carousel slide" data-bs-ride="carousel">
+              <div className="carousel-inner">
+                {product.images.map((image, index) => (
+                  <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
+                    <img
+                      src={image}
+                      alt={`${product.name} - Image ${index + 1}`}
+                      className="d-block w-100 rounded"
+                      style={{ maxHeight: '500px', objectFit: 'cover' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button className="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span className="visually-hidden">Previous</span>
+              </button>
+              <button className="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                <span className="visually-hidden">Next</span>
+              </button>
+
+              {/* Carousel indicators */}
+              <div className="carousel-indicators">
+                {product.images.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    data-bs-target="#productCarousel"
+                    data-bs-slide-to={index}
+                    className={index === 0 ? 'active' : ''}
+                    aria-current={index === 0 ? 'true' : 'false'}
+                    aria-label={`Slide ${index + 1}`}
+                  ></button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Single image - show regular image
+            <img
+              src={product.images ? product.images[0] : product.image}
+              alt={product.name}
+              className="img-fluid rounded"
+              style={{ width: '100%', maxHeight: '500px', objectFit: 'cover' }}
+            />
+          )}
         </div>
         <div className="col-md-6">
           <h1 className="mb-3">{product.name}</h1>

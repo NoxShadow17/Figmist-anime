@@ -144,7 +144,7 @@ const Home = () => {
                 <div key={product.id} className="col-md-4 mb-4">
                   <div className="card h-100">
                     <img
-                      src={product.image}
+                      src={product.images ? product.images[0] : product.image}
                       className="card-img-top"
                       alt={product.name}
                       style={{ height: '250px', objectFit: 'cover' }}

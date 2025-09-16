@@ -22,7 +22,8 @@ const Admin = () => {
     inStock: false,
     discountPercentage: 0,
     discountActive: false,
-    featured: false
+    featured: false,
+    images: []
   });
 
   useEffect(() => {
@@ -71,19 +72,40 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      let imageUrl = formData.image;
+    console.log('Form submission started');
+    console.log('Form data:', formData);
+    console.log('Image file:', imageFile);
 
-      // Upload image if file is selected
+    try {
+      // Upload any pending image file first
+      let pendingImageUrl = null;
       if (imageFile) {
+        console.log('Uploading image file...');
         const uploadResult = await uploadProductImage(imageFile, Date.now().toString());
         if (uploadResult.success) {
-          imageUrl = uploadResult.url;
+          pendingImageUrl = uploadResult.url;
+          console.log('Image uploaded successfully:', pendingImageUrl);
         } else {
+          console.error('Image upload failed:', uploadResult.error);
           alert('Image upload failed: ' + uploadResult.error);
           setLoading(false);
           return;
         }
+      }
+
+      // Combine existing images with newly uploaded image
+      const uploadedImages = [...formData.images];
+      if (pendingImageUrl) {
+        uploadedImages.push(pendingImageUrl);
+      }
+
+      console.log('Final images array:', uploadedImages);
+
+      // Ensure at least one image
+      if (uploadedImages.length === 0) {
+        alert('Please add at least one product image.');
+        setLoading(false);
+        return;
       }
 
       const productData = {
@@ -91,7 +113,7 @@ const Admin = () => {
         price: parseFloat(formData.price),
         category: formData.category,
         description: formData.description,
-        image: imageUrl,
+        images: uploadedImages,
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : [],
         inStock: formData.inStock,
         discount_percentage: parseFloat(formData.discountPercentage) || 0,
@@ -99,12 +121,18 @@ const Admin = () => {
         featured: formData.featured
       };
 
+      console.log('Product data to save:', productData);
+
       let result;
       if (editingProduct) {
+        console.log('Updating product:', editingProduct.id);
         result = await updateProduct(editingProduct.id, productData);
       } else {
+        console.log('Adding new product');
         result = await addProduct(productData);
       }
+
+      console.log('Database operation result:', result);
 
       if (result.success) {
         alert(`Product ${editingProduct ? 'updated' : 'added'} successfully!`);
@@ -113,9 +141,11 @@ const Admin = () => {
         resetForm();
         loadProducts();
       } else {
+        console.error('Product save failed:', result.error);
         alert(`Failed to ${editingProduct ? 'update' : 'add'} product: ` + result.error);
       }
     } catch (error) {
+      console.error('Form submission error:', error);
       alert('Error: ' + error.message);
     }
 
@@ -129,14 +159,15 @@ const Admin = () => {
       price: product.price,
       category: product.category,
       description: product.description,
-      image: product.image,
       sizes: product.sizes ? product.sizes.join(', ') : '',
       inStock: product.inStock,
       discountPercentage: product.discount_percentage || 0,
       discountActive: product.discount_active || false,
-      featured: product.featured || false
+      featured: product.featured || false,
+      images: product.images || [product.image] // Backward compatibility
     });
-    setImagePreview(product.image);
+    setImageFile(null);
+    setImagePreview('');
     setShowAddForm(true);
   };
 
@@ -164,10 +195,33 @@ const Admin = () => {
       inStock: false,
       discountPercentage: 0,
       discountActive: false,
-      featured: false
+      featured: false,
+      images: []
     });
     setImageFile(null);
     setImagePreview('');
+  };
+
+  const addImageToForm = () => {
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, e.target.result]
+        }));
+        setImageFile(null);
+        setImagePreview('');
+      };
+      reader.readAsDataURL(imageFile);
+    }
+  };
+
+  const removeImageFromForm = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const handleImageChange = (e) => {
@@ -311,23 +365,68 @@ const Admin = () => {
                 </div>
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Product Image</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                    {imagePreview && (
-                      <div className="mt-2">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                          className="rounded"
-                        />
+                    <label className="form-label">Product Images</label>
+
+                    {/* Current Images */}
+                    {formData.images.length > 0 && (
+                      <div className="mb-3">
+                        <label className="form-label">Current Images:</label>
+                        <div className="d-flex flex-wrap gap-2">
+                          {formData.images.map((image, index) => (
+                            <div key={index} className="position-relative">
+                              <img
+                                src={image}
+                                alt={`Product ${index + 1}`}
+                                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                className="rounded border"
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-danger position-absolute top-0 end-0"
+                                style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem' }}
+                                onClick={() => removeImageFromForm(index)}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+
+                    {/* Add New Image */}
+                    <div className="border rounded p-3 mb-3">
+                      <label className="form-label">Add New Image:</label>
+                      <input
+                        type="file"
+                        className="form-control mb-2"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                      {imagePreview && (
+                        <div className="d-flex align-items-center gap-2">
+                          <img
+                            src={imagePreview}
+                            alt="New preview"
+                            style={{ width: '60px', height: '60px', objectFit: 'cover' }}
+                            className="rounded border"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-success"
+                            onClick={addImageToForm}
+                          >
+                            Add Image
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <small className="text-muted">
+                      You can add multiple images. The first image will be used as the main thumbnail.
+                      <br />
+                      <strong>Note:</strong> Images are compressed to 500KB max and 800px max dimension for optimal performance.
+                    </small>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Description</label>
@@ -421,7 +520,7 @@ const Admin = () => {
                   <tr key={product.id}>
                     <td>
                       <img
-                        src={product.image}
+                        src={product.images ? product.images[0] : product.image}
                         alt={product.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                         className="rounded"

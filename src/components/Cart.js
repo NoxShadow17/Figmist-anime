@@ -92,7 +92,7 @@ const Cart = () => {
                 <div className="row align-items-center">
                   <div className="col-md-2">
                     <img
-                      src={item.image}
+                      src={item.images ? item.images[0] : item.image}
                       alt={item.name}
                       className="img-fluid rounded"
                       style={{ maxHeight: '80px', objectFit: 'cover' }}

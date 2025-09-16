@@ -138,7 +138,7 @@ const Products = () => {
           <div key={product.id} className="col-lg-4 col-md-6 mb-4">
             <div className="card h-100">
               <img
-                src={product.image}
+                src={product.images ? product.images[0] : product.image}
                 className="card-img-top"
                 alt={product.name}
                 style={{ height: '250px', objectFit: 'cover' }}
@@ -210,7 +210,7 @@ const Products = () => {
               <div className="modal-body">
                 <div className="text-center mb-3">
                   <img
-                    src={selectedProduct.image}
+                    src={selectedProduct.images ? selectedProduct.images[0] : selectedProduct.image}
                     alt={selectedProduct.name}
                     className="img-fluid rounded"
                     style={{ maxHeight: '150px', objectFit: 'cover' }}
