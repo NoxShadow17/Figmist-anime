@@ -72,18 +72,42 @@ export const addProduct = async (productData) => {
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
-    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    const newProduct = {
-      ...productData,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+      const newProduct = {
+        ...productData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-    products.unshift(newProduct);
-    localStorage.setItem('figmist_products', JSON.stringify(products));
+      products.unshift(newProduct);
+      localStorage.setItem('figmist_products', JSON.stringify(products));
 
-    return { success: true, id: newProduct.id };
+      return { success: true, id: newProduct.id };
+    } catch (storageError) {
+      // If localStorage quota exceeded, cleanup and retry
+      if (storageError.name === 'QuotaExceededError') {
+        cleanupLocalStorage();
+        try {
+          const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+          const newProduct = {
+            ...productData,
+            id: Date.now().toString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          products.unshift(newProduct);
+          localStorage.setItem('figmist_products', JSON.stringify(products));
+
+          return { success: true, id: newProduct.id };
+        } catch (retryError) {
+          return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
+        }
+      }
+      return { success: false, error: storageError.message };
+    }
   }
 };
 
@@ -101,19 +125,44 @@ export const updateProduct = async (id, productData) => {
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
-    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    const index = products.findIndex(p => p.id === id);
+    try {
+      const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+      const index = products.findIndex(p => p.id === id);
 
-    if (index !== -1) {
-      products[index] = {
-        ...products[index],
-        ...productData,
-        updated_at: new Date().toISOString()
-      };
-      localStorage.setItem('figmist_products', JSON.stringify(products));
-      return { success: true };
-    } else {
-      return { success: false, error: 'Product not found' };
+      if (index !== -1) {
+        products[index] = {
+          ...products[index],
+          ...productData,
+          updated_at: new Date().toISOString()
+        };
+        localStorage.setItem('figmist_products', JSON.stringify(products));
+        return { success: true };
+      } else {
+        return { success: false, error: 'Product not found' };
+      }
+    } catch (storageError) {
+      if (storageError.name === 'QuotaExceededError') {
+        cleanupLocalStorage();
+        try {
+          const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+          const index = products.findIndex(p => p.id === id);
+
+          if (index !== -1) {
+            products[index] = {
+              ...products[index],
+              ...productData,
+              updated_at: new Date().toISOString()
+            };
+            localStorage.setItem('figmist_products', JSON.stringify(products));
+            return { success: true };
+          } else {
+            return { success: false, error: 'Product not found' };
+          }
+        } catch (retryError) {
+          return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
+        }
+      }
+      return { success: false, error: storageError.message };
     }
   }
 };
@@ -274,12 +323,12 @@ export const getFeaturedProducts = async () => {
 // FREE Image Storage - Supabase Storage (50MB FREE)
 export const uploadProductImage = async (file, productId) => {
   try {
-    // Check file size (limit to 500KB per image to prevent localStorage quota issues)
-    const maxSize = 500 * 1024; // 500KB
+    // Check file size (limit to 200KB per image to prevent localStorage quota issues)
+    const maxSize = 200 * 1024; // 200KB (reduced from 500KB)
     if (file.size > maxSize) {
       return {
         success: false,
-        error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use an image smaller than 500KB.`
+        error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use an image smaller than 200KB.`
       };
     }
 
@@ -299,10 +348,24 @@ export const uploadProductImage = async (file, productId) => {
     const compressedBase64 = await compressImage(file);
     const dataUrl = `data:${file.type};base64,${compressedBase64}`;
 
+    // Check if adding this image would exceed localStorage quota
+    const currentData = localStorage.getItem('figmist_products') || '[]';
+    const testData = currentData.replace(/]$/, `,{"test":"${compressedBase64.substring(0, 100)}..."}]`);
+
+    try {
+      localStorage.setItem('figmist_products_test', testData);
+      localStorage.removeItem('figmist_products_test');
+    } catch (quotaError) {
+      return {
+        success: false,
+        error: 'Storage quota exceeded. Please delete some products or use smaller images.'
+      };
+    }
+
     return {
       success: true,
       url: dataUrl,
-      message: 'Image compressed and stored locally (FREE!)'
+      message: 'Image compressed and stored locally (200KB limit)'
     };
   } catch (error) {
     return { success: false, error: error.message };
@@ -325,9 +388,9 @@ const compressImage = (file) => {
     const img = new Image();
 
     img.onload = () => {
-      // Calculate new dimensions (max 800px width/height)
+      // Calculate new dimensions (max 600px width/height for better compression)
       let { width, height } = img;
-      const maxDimension = 800;
+      const maxDimension = 600; // Reduced from 800px
 
       if (width > height) {
         if (width > maxDimension) {
@@ -344,17 +407,39 @@ const compressImage = (file) => {
       canvas.width = width;
       canvas.height = height;
 
-      // Draw and compress
+      // Draw and compress with higher compression (0.7 quality for smaller files)
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Convert to base64 with compression (0.8 quality)
-      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      // Convert to base64 with higher compression (0.7 quality)
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
       resolve(compressedBase64);
     };
 
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
   });
+};
+
+// Helper function to clean up localStorage when quota is exceeded
+const cleanupLocalStorage = () => {
+  try {
+    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+
+    // Keep only the most recent 10 products to prevent quota issues
+    if (products.length > 10) {
+      const recentProducts = products.slice(0, 10);
+      localStorage.setItem('figmist_products', JSON.stringify(recentProducts));
+      console.warn('Cleaned up localStorage: kept only 10 most recent products');
+    }
+  } catch (error) {
+    console.error('Error cleaning up localStorage:', error);
+    // If cleanup fails, clear everything except admin session
+    const adminSession = localStorage.getItem('figmist_admin_session');
+    localStorage.clear();
+    if (adminSession) {
+      localStorage.setItem('figmist_admin_session', adminSession);
+    }
+  }
 };
 
 // Helper function to convert file to base64
