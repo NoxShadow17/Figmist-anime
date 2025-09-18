@@ -285,12 +285,12 @@ export const getFeaturedProducts = async () => {
 // FREE Image Storage - Supabase Storage (50MB FREE)
 export const uploadProductImage = async (file, productId) => {
   try {
-    // Check file size (limit to 200KB per image to prevent localStorage quota issues)
-    const maxSize = 200 * 1024; // 200KB (reduced from 500KB)
+    // Check file size (limit to 900KB per image to prevent localStorage quota issues)
+    const maxSize = 900 * 1024; // 900KB
     if (file.size > maxSize) {
       return {
         success: false,
-        error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use an image smaller than 200KB.`
+        error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Please use an image smaller than 900KB.`
       };
     }
 
@@ -327,7 +327,7 @@ export const uploadProductImage = async (file, productId) => {
     return {
       success: true,
       url: dataUrl,
-      message: 'Image compressed and stored locally (200KB limit)'
+      message: 'Image compressed and stored locally (900KB limit)'
     };
   } catch (error) {
     return { success: false, error: error.message };
