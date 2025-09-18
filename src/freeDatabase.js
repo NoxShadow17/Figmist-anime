@@ -52,143 +52,105 @@ export const checkAdminSession = () => {
 
 // Product CRUD operations with Supabase
 export const addProduct = async (productData) => {
+  // Temporarily skip Supabase and use localStorage only to avoid timeout errors
+  // TODO: Re-enable Supabase once database schema is properly set up
+  console.log('Using localStorage for product creation (Supabase temporarily disabled to prevent timeouts)');
+
   try {
-    // Prepare data for database - handle both old and new schema
-    const dbData = { ...productData };
+    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+    const newProduct = {
+      ...productData,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    // If images array exists, use first image for backward compatibility
-    if (dbData.images && dbData.images.length > 0) {
-      dbData.image = dbData.images[0]; // For old schema compatibility
-    }
+    products.unshift(newProduct);
+    localStorage.setItem('figmist_products', JSON.stringify(products));
 
-    const { data, error } = await supabase
-      .from('products')
-      .insert([dbData])
-      .select()
+    return { success: true, id: newProduct.id };
+  } catch (storageError) {
+    // If localStorage quota exceeded, cleanup and retry
+    if (storageError.name === 'QuotaExceededError') {
+      cleanupLocalStorage();
+      try {
+        const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+        const newProduct = {
+          ...productData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
-    if (error) throw error
+        products.unshift(newProduct);
+        localStorage.setItem('figmist_products', JSON.stringify(products));
 
-    return { success: true, id: data[0].id };
-  } catch (error) {
-    // Fallback to localStorage if Supabase fails
-    console.warn('Supabase error, falling back to localStorage:', error.message)
-    try {
-      const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-      const newProduct = {
-        ...productData,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      products.unshift(newProduct);
-      localStorage.setItem('figmist_products', JSON.stringify(products));
-
-      return { success: true, id: newProduct.id };
-    } catch (storageError) {
-      // If localStorage quota exceeded, cleanup and retry
-      if (storageError.name === 'QuotaExceededError') {
-        cleanupLocalStorage();
-        try {
-          const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-          const newProduct = {
-            ...productData,
-            id: Date.now().toString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          products.unshift(newProduct);
-          localStorage.setItem('figmist_products', JSON.stringify(products));
-
-          return { success: true, id: newProduct.id };
-        } catch (retryError) {
-          return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
-        }
+        return { success: true, id: newProduct.id };
+      } catch (retryError) {
+        return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
       }
-      return { success: false, error: storageError.message };
     }
+    return { success: false, error: storageError.message };
   }
 };
 
 export const updateProduct = async (id, productData) => {
+  // Temporarily skip Supabase and use localStorage only to avoid timeout errors
+  console.log('Using localStorage for product update (Supabase temporarily disabled to prevent timeouts)');
+
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .update(productData)
-      .eq('id', id)
-      .select()
-
-    if (error) throw error
-
-    return { success: true };
-  } catch (error) {
-    // Fallback to localStorage if Supabase fails
-    console.warn('Supabase error, falling back to localStorage:', error.message)
-    try {
-      const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-      const index = products.findIndex(p => p.id === id);
-
-      if (index !== -1) {
-        products[index] = {
-          ...products[index],
-          ...productData,
-          updated_at: new Date().toISOString()
-        };
-        localStorage.setItem('figmist_products', JSON.stringify(products));
-        return { success: true };
-      } else {
-        return { success: false, error: 'Product not found' };
-      }
-    } catch (storageError) {
-      if (storageError.name === 'QuotaExceededError') {
-        cleanupLocalStorage();
-        try {
-          const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-          const index = products.findIndex(p => p.id === id);
-
-          if (index !== -1) {
-            products[index] = {
-              ...products[index],
-              ...productData,
-              updated_at: new Date().toISOString()
-            };
-            localStorage.setItem('figmist_products', JSON.stringify(products));
-            return { success: true };
-          } else {
-            return { success: false, error: 'Product not found' };
-          }
-        } catch (retryError) {
-          return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
-        }
-      }
-      return { success: false, error: storageError.message };
-    }
-  }
-};
-
-export const deleteProduct = async (id) => {
-  try {
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
-
-    return { success: true };
-  } catch (error) {
-    // Fallback to localStorage if Supabase fails
-    console.warn('Supabase error, falling back to localStorage:', error.message)
     const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    const filteredProducts = products.filter(p => p.id !== id);
+    const index = products.findIndex(p => p.id === id);
 
-    if (filteredProducts.length < products.length) {
-      localStorage.setItem('figmist_products', JSON.stringify(filteredProducts));
+    if (index !== -1) {
+      products[index] = {
+        ...products[index],
+        ...productData,
+        updated_at: new Date().toISOString()
+      };
+      localStorage.setItem('figmist_products', JSON.stringify(products));
       return { success: true };
     } else {
       return { success: false, error: 'Product not found' };
     }
+  } catch (storageError) {
+    if (storageError.name === 'QuotaExceededError') {
+      cleanupLocalStorage();
+      try {
+        const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+        const index = products.findIndex(p => p.id === id);
+
+        if (index !== -1) {
+          products[index] = {
+            ...products[index],
+            ...productData,
+            updated_at: new Date().toISOString()
+          };
+          localStorage.setItem('figmist_products', JSON.stringify(products));
+          return { success: true };
+        } else {
+          return { success: false, error: 'Product not found' };
+        }
+      } catch (retryError) {
+        return { success: false, error: 'Storage quota exceeded. Please delete some products first.' };
+      }
+    }
+    return { success: false, error: storageError.message };
+  }
+};
+
+export const deleteProduct = async (id) => {
+  // Temporarily skip Supabase and use localStorage only to avoid timeout errors
+  console.log('Using localStorage for product deletion (Supabase temporarily disabled to prevent timeouts)');
+
+  const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+  const filteredProducts = products.filter(p => p.id !== id);
+
+  if (filteredProducts.length < products.length) {
+    localStorage.setItem('figmist_products', JSON.stringify(filteredProducts));
+    return { success: true };
+  } else {
+    return { success: false, error: 'Product not found' };
   }
 };
 
