@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllProducts, getProductsByCategory, loadProductImages } from '../freeDatabase';
-import { useCart } from '../App';
+import { useCart, useTheme } from '../App';
 
 // Helper function to calculate discounted price
 const calculateDiscountedPrice = (price, discountPercentage, discountActive) => {
@@ -13,6 +13,7 @@ const calculateDiscountedPrice = (price, discountPercentage, discountActive) => 
 
 const Products = () => {
   const { addToCart } = useCart();
+  const { theme } = useTheme();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -261,11 +262,11 @@ const Products = () => {
       {totalPages > 1 && !loading && (
         <div className="d-flex justify-content-center align-items-center mt-4 mb-4">
           <nav aria-label="Product pagination">
-            <ul className="pagination pagination-lg">
+            <ul className={`pagination pagination-lg ${theme === 'dark' ? 'pagination-dark' : ''}`}>
               {/* Previous Button */}
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''} ${theme === 'dark' ? 'page-item-dark' : ''}`}>
                 <button
-                  className="page-link"
+                  className={`page-link ${theme === 'dark' ? 'page-link-dark' : ''}`}
                   onClick={handlePrevPage}
                   disabled={currentPage === 1}
                   aria-label="Previous page"
@@ -289,9 +290,9 @@ const Products = () => {
                 }
 
                 return (
-                  <li key={pageNum} className={`page-item ${currentPage === pageNum ? 'active' : ''}`}>
+                  <li key={pageNum} className={`page-item ${currentPage === pageNum ? 'active' : ''} ${theme === 'dark' ? 'page-item-dark' : ''}`}>
                     <button
-                      className="page-link"
+                      className={`page-link ${theme === 'dark' ? 'page-link-dark' : ''}`}
                       onClick={() => handlePageChange(pageNum)}
                     >
                       {pageNum}
@@ -301,9 +302,9 @@ const Products = () => {
               })}
 
               {/* Next Button */}
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''} ${theme === 'dark' ? 'page-item-dark' : ''}`}>
                 <button
-                  className="page-link"
+                  className={`page-link ${theme === 'dark' ? 'page-link-dark' : ''}`}
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
                   aria-label="Next page"
