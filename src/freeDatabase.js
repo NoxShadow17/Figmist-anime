@@ -193,33 +193,34 @@ export const deleteProduct = async (id) => {
 };
 
 export const getAllProducts = async () => {
-  try {
-    // Query Supabase with both image columns for backward compatibility
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
-      .order('created_at', { ascending: false })
+  // DATABASE SCHEMA NOT SET UP YET
+  // To enable Supabase, run this SQL in your Supabase dashboard:
+  /*
+  CREATE TABLE IF NOT EXISTS products (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    price NUMERIC NOT NULL,
+    category TEXT,
+    description TEXT,
+    image TEXT,
+    images TEXT[],
+    sizes TEXT[],
+    "inStock" BOOLEAN DEFAULT true,
+    discount_percentage NUMERIC DEFAULT 0,
+    discount_active BOOLEAN DEFAULT false,
+    featured BOOLEAN DEFAULT false,
+    details TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+  */
 
-    if (error) throw error
+  console.log('⚠️  DATABASE NOT SET UP: Using localStorage until Supabase schema is configured');
+  console.log('📁 To enable Supabase: Go to https://supabase.com/dashboard → SQL Editor → Run supabase-setup.sql');
 
-    // Normalize data to ensure images array exists (prefer images array, fallback to single image)
-    const normalizedData = data.map(product => ({
-      ...product,
-      images: product.images || (product.image ? [product.image] : []),
-      sizes: product.sizes || [],
-      inStock: product.inStock !== false,
-      discount_percentage: product.discount_percentage || 0,
-      discount_active: product.discount_active || false,
-      featured: product.featured || false
-    }));
-
-    return { success: true, products: normalizedData };
-  } catch (error) {
-    // Fallback to localStorage if Supabase fails
-    console.warn('Supabase error, falling back to localStorage:', error.message)
-    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    return { success: true, products };
-  }
+  // Use localStorage until Supabase is properly configured
+  const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+  return { success: true, products };
 };
 
 export const getProductById = async (id) => {
