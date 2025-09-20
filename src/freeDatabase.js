@@ -194,12 +194,18 @@ export const deleteProduct = async (id) => {
 
 export const getAllProducts = async () => {
   try {
+    console.log('🔍 Fetching products from Supabase database...');
     const { data, error } = await supabase
       .from('products')
       .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ Supabase database error:', error);
+      throw error;
+    }
+
+    console.log('✅ Retrieved', data.length, 'products from database');
 
     // Ensure images array exists for compatibility (prefer images array, fallback to single image)
     const products = data.map(product => ({
@@ -212,12 +218,43 @@ export const getAllProducts = async () => {
       featured: product.featured || false
     }));
 
-    return { success: true, products };
+    // Cache in localStorage for offline access
+    try {
+      localStorage.setItem('figmist_products', JSON.stringify(products));
+      console.log('💾 Products cached in localStorage for offline access');
+    } catch (cacheError) {
+      console.warn('⚠️ Could not cache products in localStorage:', cacheError.message);
+    }
+
+    return { success: true, products, source: 'database' };
   } catch (error) {
-    // Fallback to localStorage if Supabase fails
-    console.warn('Supabase error, falling back to localStorage:', error.message)
-    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    return { success: true, products };
+    console.error('❌ Database connection failed:', error.message);
+
+    // Only fallback to localStorage if database is completely unavailable
+    console.log('🔄 Attempting to load from localStorage cache...');
+    try {
+      const cachedProducts = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+      if (cachedProducts.length > 0) {
+        console.log('📱 Loaded', cachedProducts.length, 'products from localStorage cache');
+        return {
+          success: true,
+          products: cachedProducts,
+          source: 'cache',
+          warning: 'Database unavailable - showing cached data'
+        };
+      }
+    } catch (cacheError) {
+      console.error('❌ Cache loading failed:', cacheError.message);
+    }
+
+    // Return empty array if both database and cache fail
+    console.log('🚫 No products available - both database and cache failed');
+    return {
+      success: false,
+      products: [],
+      source: 'none',
+      error: 'Unable to load products from database or cache'
+    };
   }
 };
 
