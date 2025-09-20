@@ -27,6 +27,8 @@ const Products = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
 
   const handleAddToCart = (product) => {
     if (product.sizes && product.sizes.length > 0 && product.category === 'clothing') {
@@ -70,9 +72,9 @@ const Products = () => {
     try {
       let result;
       if (selectedCategory === 'all') {
-        result = await getAllProducts(page, 3);
+        result = await getAllProducts(page, 6); // Changed from 3 to 6
       } else {
-        result = await getProductsByCategory(selectedCategory, page, 3);
+        result = await getProductsByCategory(selectedCategory, page, 6); // Changed from 3 to 6
       }
 
       if (result.success) {
@@ -80,10 +82,17 @@ const Products = () => {
           setProducts(prev => [...prev, ...result.products]);
         } else {
           setProducts(result.products);
-          setCurrentPage(1);
+          setCurrentPage(page);
         }
 
-        setHasMore(result.hasMore || false);
+        // Update pagination state from response
+        if (result.pagination) {
+          setHasMore(result.pagination.hasMore);
+          setTotalPages(result.pagination.totalPages);
+          setTotalProducts(result.pagination.totalProducts);
+        } else {
+          setHasMore(result.hasMore || false);
+        }
 
         // Extract unique categories only on first load
         if (!append && page === 1) {
@@ -111,6 +120,25 @@ const Products = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
     loadProducts(nextPage, true);
+  };
+
+  const handlePageChange = (page) => {
+    if (page !== currentPage && page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      loadProducts(page, false);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
+    }
   };
 
   useEffect(() => {
@@ -229,8 +257,68 @@ const Products = () => {
         </div>
       )}
 
-      {/* Load More Button */}
-      {hasMore && !loading && (
+      {/* Pagination Controls */}
+      {totalPages > 1 && !loading && (
+        <div className="d-flex justify-content-center align-items-center mt-4 mb-4">
+          <nav aria-label="Product pagination">
+            <ul className="pagination pagination-lg">
+              {/* Previous Button */}
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button
+                  className="page-link"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                >
+                  <i className="fas fa-chevron-left me-1"></i>
+                  Previous
+                </button>
+              </li>
+
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <li key={pageNum} className={`page-item ${currentPage === pageNum ? 'active' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  </li>
+                );
+              })}
+
+              {/* Next Button */}
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button
+                  className="page-link"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                >
+                  Next
+                  <i className="fas fa-chevron-right ms-1"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
+
+      {/* Load More Button (fallback for infinite scroll) */}
+      {hasMore && !loading && totalPages <= 1 && (
         <div className="text-center mt-4">
           <button
             className="btn btn-primary btn-lg"
@@ -249,6 +337,16 @@ const Products = () => {
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {totalProducts > 0 && !loading && (
+        <div className="text-center text-muted mt-3">
+          <small>
+            Showing {((currentPage - 1) * 6) + 1}-{Math.min(currentPage * 6, totalProducts)} of {totalProducts} products
+            {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+          </small>
         </div>
       )}
 

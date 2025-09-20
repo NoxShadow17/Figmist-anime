@@ -227,29 +227,33 @@ const retryWithBackoff = async (fn, maxRetries = 3, baseDelay = 1000) => {
   }
 };
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (page = 1, limit = 6) => {
   try {
-    console.log('🔍 Fetching products from Supabase database...');
+    console.log(`🔍 Fetching products from Supabase database (page ${page}, limit ${limit})...`);
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
 
     // Use retry logic for the database query
     const result = await retryWithBackoff(async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('products')
-        .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
+        .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at', { count: 'exact' })
         .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('❌ Supabase database error:', error);
         throw error;
       }
 
-      return data;
+      return { data, count };
     }, 3, 2000); // 3 retries with 2 second base delay
 
-    console.log('✅ Retrieved', result.length, 'products from database');
+    console.log(`✅ Retrieved ${result.data.length} products from database (page ${page})`);
 
     // Ensure images array exists for compatibility (prefer images array, fallback to single image)
-    const products = result.map(product => ({
+    const products = result.data.map(product => ({
       ...product,
       images: product.images || (product.image ? [product.image] : []),
       sizes: product.sizes || [],
@@ -259,30 +263,64 @@ export const getAllProducts = async () => {
       featured: product.featured || false
     }));
 
-    // Cache in localStorage for offline access
+    // Calculate pagination info
+    const totalProducts = result.count || 0;
+    const totalPages = Math.ceil(totalProducts / limit);
+    const hasMore = page < totalPages;
+
+    // Cache only the current page in localStorage for better performance
     try {
-      localStorage.setItem('figmist_products', JSON.stringify(products));
-      console.log('💾 Products cached in localStorage for offline access');
+      const cacheKey = `figmist_products_page_${page}`;
+      localStorage.setItem(cacheKey, JSON.stringify({
+        products,
+        timestamp: Date.now(),
+        page,
+        limit,
+        totalProducts,
+        totalPages
+      }));
+      console.log(`💾 Page ${page} cached in localStorage for offline access`);
     } catch (cacheError) {
       console.warn('⚠️ Could not cache products in localStorage:', cacheError.message);
     }
 
-    return { success: true, products, source: 'database' };
+    return {
+      success: true,
+      products,
+      source: 'database',
+      pagination: {
+        page,
+        limit,
+        totalProducts,
+        totalPages,
+        hasMore
+      }
+    };
   } catch (error) {
     console.error('❌ Database connection failed after retries:', error.message);
 
-    // Only fallback to localStorage if database is completely unavailable
-    console.log('🔄 Attempting to load from localStorage cache...');
+    // Try to load from cache first
     try {
-      const cachedProducts = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-      if (cachedProducts.length > 0) {
-        console.log('📱 Loaded', cachedProducts.length, 'products from localStorage cache');
-        return {
-          success: true,
-          products: cachedProducts,
-          source: 'cache',
-          warning: 'Database unavailable - showing cached data'
-        };
+      const cacheKey = `figmist_products_page_${page}`;
+      const cachedData = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+
+      if (cachedData && cachedData.products && cachedData.products.length > 0) {
+        // Check if cache is not too old (24 hours)
+        const cacheAge = Date.now() - (cachedData.timestamp || 0);
+        if (cacheAge < 24 * 60 * 60 * 1000) {
+          console.log(`📱 Loaded ${cachedData.products.length} products from localStorage cache (page ${page})`);
+          return {
+            success: true,
+            products: cachedData.products,
+            source: 'cache',
+            warning: 'Database unavailable - showing cached data',
+            pagination: cachedData.pagination || {
+              page,
+              limit,
+              hasMore: false
+            }
+          };
+        }
       }
     } catch (cacheError) {
       console.error('❌ Cache loading failed:', cacheError.message);
@@ -294,7 +332,14 @@ export const getAllProducts = async () => {
       success: false,
       products: [],
       source: 'none',
-      error: 'Unable to load products from database or cache'
+      error: 'Unable to load products from database or cache',
+      pagination: {
+        page,
+        limit,
+        totalProducts: 0,
+        totalPages: 0,
+        hasMore: false
+      }
     };
   }
 };
@@ -335,18 +380,34 @@ export const getProductById = async (id) => {
   }
 };
 
-export const getProductsByCategory = async (category) => {
+export const getProductsByCategory = async (category, page = 1, limit = 6) => {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
-      .eq('category', category)
-      .order('created_at', { ascending: false })
+    console.log(`🔍 Fetching products by category '${category}' from Supabase database (page ${page}, limit ${limit})...`);
 
-    if (error) throw error
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
+
+    // Use retry logic for the database query
+    const result = await retryWithBackoff(async () => {
+      const { data, error, count } = await supabase
+        .from('products')
+        .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at', { count: 'exact' })
+        .eq('category', category)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error('❌ Supabase database error:', error);
+        throw error;
+      }
+
+      return { data, count };
+    }, 3, 2000); // 3 retries with 2 second base delay
+
+    console.log(`✅ Retrieved ${result.data.length} products from category '${category}' (page ${page})`);
 
     // Ensure images array exists for compatibility (prefer images array, fallback to single image)
-    const products = data.map(product => ({
+    const products = result.data.map(product => ({
       ...product,
       images: product.images || (product.image ? [product.image] : []),
       sizes: product.sizes || [],
@@ -356,13 +417,66 @@ export const getProductsByCategory = async (category) => {
       featured: product.featured || false
     }));
 
-    return { success: true, products };
+    // Calculate pagination info
+    const totalProducts = result.count || 0;
+    const totalPages = Math.ceil(totalProducts / limit);
+    const hasMore = page < totalPages;
+
+    return {
+      success: true,
+      products,
+      pagination: {
+        page,
+        limit,
+        totalProducts,
+        totalPages,
+        hasMore
+      }
+    };
   } catch (error) {
+    console.error('❌ Database connection failed after retries:', error.message);
+
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)
-    const products = JSON.parse(localStorage.getItem('figmist_products') || '[]');
-    const filteredProducts = products.filter(p => p.category === category);
-    return { success: true, products: filteredProducts };
+    try {
+      const allProducts = JSON.parse(localStorage.getItem('figmist_products') || '[]');
+      const filteredProducts = allProducts.filter(p => p.category === category);
+
+      // Apply pagination to cached results
+      const offset = (page - 1) * limit;
+      const paginatedProducts = filteredProducts.slice(offset, offset + limit);
+      const totalProducts = filteredProducts.length;
+      const totalPages = Math.ceil(totalProducts / limit);
+      const hasMore = page < totalPages;
+
+      return {
+        success: true,
+        products: paginatedProducts,
+        source: 'cache',
+        warning: 'Database unavailable - showing cached data',
+        pagination: {
+          page,
+          limit,
+          totalProducts,
+          totalPages,
+          hasMore
+        }
+      };
+    } catch (cacheError) {
+      console.error('❌ Cache loading failed:', cacheError.message);
+      return {
+        success: false,
+        products: [],
+        error: 'Unable to load products from database or cache',
+        pagination: {
+          page,
+          limit,
+          totalProducts: 0,
+          totalPages: 0,
+          hasMore: false
+        }
+      };
+    }
   }
 };
 
