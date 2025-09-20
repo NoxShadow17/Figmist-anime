@@ -8,7 +8,25 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://racemusoavpnneiurnsz.supabase.co'
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhY2VtdXNvYXZwbm5laXVybnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyMzg4NTgsImV4cCI6MjA3MjgxNDg1OH0.keZMvLW-yTTSNiVIHl1c4hiKKycSTDIByfesg2kMKS8'
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Create Supabase client with increased timeout and retry configuration
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  },
+  global: {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  // Increase timeout to 30 seconds (default is 10 seconds)
+  realtime: {
+    timeout: 30000, // 30 seconds
+  },
+})
 
 // Authentication functions
 export const loginAdmin = async (email, password) => {
@@ -192,23 +210,46 @@ export const deleteProduct = async (id) => {
   }
 };
 
+// Helper function for retry logic with exponential backoff
+const retryWithBackoff = async (fn, maxRetries = 3, baseDelay = 1000) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+      console.warn(`⚠️ Attempt ${attempt} failed, retrying in ${delay}ms...`, error.message);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
 export const getAllProducts = async () => {
   try {
     console.log('🔍 Fetching products from Supabase database...');
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
-      .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('❌ Supabase database error:', error);
-      throw error;
-    }
+    // Use retry logic for the database query
+    const result = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, category, description, image, images, sizes, inStock, discount_percentage, discount_active, featured, details, created_at, updated_at')
+        .order('created_at', { ascending: false })
 
-    console.log('✅ Retrieved', data.length, 'products from database');
+      if (error) {
+        console.error('❌ Supabase database error:', error);
+        throw error;
+      }
+
+      return data;
+    }, 3, 2000); // 3 retries with 2 second base delay
+
+    console.log('✅ Retrieved', result.length, 'products from database');
 
     // Ensure images array exists for compatibility (prefer images array, fallback to single image)
-    const products = data.map(product => ({
+    const products = result.map(product => ({
       ...product,
       images: product.images || (product.image ? [product.image] : []),
       sizes: product.sizes || [],
@@ -228,7 +269,7 @@ export const getAllProducts = async () => {
 
     return { success: true, products, source: 'database' };
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    console.error('❌ Database connection failed after retries:', error.message);
 
     // Only fallback to localStorage if database is completely unavailable
     console.log('🔄 Attempting to load from localStorage cache...');
@@ -514,6 +555,68 @@ const initializeData = () => {
 };
 
 initializeData();
+
+// Connection diagnostic function
+export const diagnoseConnection = async () => {
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    url: supabaseUrl,
+    keyPresent: !!supabaseKey,
+    keyLength: supabaseKey ? supabaseKey.length : 0,
+    tests: {}
+  };
+
+  try {
+    console.log('🔍 Running Supabase connection diagnostics...');
+
+    // Test 1: Basic connectivity
+    diagnostics.tests.connectivity = { status: 'testing' };
+    const startTime = Date.now();
+    const { data: testData, error: testError } = await supabase
+      .from('products')
+      .select('count', { count: 'exact', head: true });
+
+    const responseTime = Date.now() - startTime;
+
+    if (testError) {
+      diagnostics.tests.connectivity = {
+        status: 'failed',
+        error: testError.message,
+        code: testError.code,
+        responseTime
+      };
+    } else {
+      diagnostics.tests.connectivity = {
+        status: 'success',
+        responseTime,
+        count: testData
+      };
+    }
+
+    // Test 2: Network information
+    diagnostics.tests.network = {
+      userAgent: navigator.userAgent,
+      online: navigator.onLine,
+      connection: navigator.connection ? {
+        effectiveType: navigator.connection.effectiveType,
+        downlink: navigator.connection.downlink,
+        rtt: navigator.connection.rtt
+      } : 'Not available'
+    };
+
+    console.log('📊 Connection diagnostics completed:', diagnostics);
+    return diagnostics;
+
+  } catch (error) {
+    diagnostics.tests.connectivity = {
+      status: 'error',
+      error: error.message,
+      stack: error.stack
+    };
+    console.error('❌ Connection diagnostics failed:', error);
+    return diagnostics;
+  }
+};
 
 // Export Supabase client for advanced usage
 export default supabase;
