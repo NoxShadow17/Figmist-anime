@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllProducts, getProductsByCategory } from '../freeDatabase';
+import { getAllProducts, getProductsByCategory, loadProductImages } from '../freeDatabase';
 import { useCart } from '../App';
 
 // Helper function to calculate discounted price
@@ -18,10 +18,15 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [categories, setCategories] = useState(['all']);
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   const handleAddToCart = (product) => {
     if (product.sizes && product.sizes.length > 0 && product.category === 'clothing') {
@@ -55,34 +60,62 @@ const Products = () => {
     setSelectedSize('');
   };
 
-  useEffect(() => {
-    const loadProducts = async () => {
+  const loadProducts = async (page = 1, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
-      try {
-        const result = await getAllProducts();
-        if (result.success) {
-          setProducts(result.products);
-          setFilteredProducts(result.products);
+    }
 
-          // Extract unique categories
+    try {
+      let result;
+      if (selectedCategory === 'all') {
+        result = await getAllProducts(page, 3);
+      } else {
+        result = await getProductsByCategory(selectedCategory, page, 3);
+      }
+
+      if (result.success) {
+        if (append) {
+          setProducts(prev => [...prev, ...result.products]);
+        } else {
+          setProducts(result.products);
+          setCurrentPage(1);
+        }
+
+        setHasMore(result.hasMore || false);
+
+        // Extract unique categories only on first load
+        if (!append && page === 1) {
           const uniqueCategories = ['all', ...new Set(result.products.map(product => product.category))];
           setCategories(uniqueCategories);
-        } else {
-          console.error('Failed to load products:', result.error);
-          // Fallback to empty array
-          setProducts([]);
-          setFilteredProducts([]);
         }
-      } catch (error) {
-        console.error('Error loading products:', error);
-        setProducts([]);
-        setFilteredProducts([]);
+      } else {
+        console.error('Failed to load products:', result.error);
+        if (!append) {
+          setProducts([]);
+        }
       }
-      setLoading(false);
-    };
+    } catch (error) {
+      console.error('Error loading products:', error);
+      if (!append) {
+        setProducts([]);
+      }
+    }
 
-    loadProducts();
-  }, []);
+    setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    loadProducts(nextPage, true);
+  };
+
+  useEffect(() => {
+    loadProducts(1, false);
+  }, [selectedCategory]); // Reload when category changes
 
   // Filter products when search term or category changes
   useEffect(() => {
@@ -138,10 +171,13 @@ const Products = () => {
           <div key={product.id} className="col-lg-4 col-md-6 mb-4">
             <div className="card h-100">
               <img
-                src={product.images ? product.images[0] : product.image}
+                src={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/300x250?text=No+Image'}
                 className="card-img-top"
                 alt={product.name}
                 style={{ height: '250px', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300x250?text=No+Image';
+                }}
               />
               <div className="card-body d-flex flex-column">
                 <h5 className="card-title">{product.name}</h5>
@@ -186,10 +222,43 @@ const Products = () => {
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {filteredProducts.length === 0 && !loading && (
         <div className="text-center py-5">
           <h3>No products found</h3>
           <p>Try adjusting your search or filter criteria.</p>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && !loading && (
+        <div className="text-center mt-4">
+          <button
+            className="btn btn-primary btn-lg"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Loading...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-plus me-2"></i>
+                Load More Products
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2">Loading products...</p>
         </div>
       )}
 

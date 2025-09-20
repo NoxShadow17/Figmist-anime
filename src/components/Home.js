@@ -20,7 +20,7 @@ const Home = () => {
     const loadFeaturedProducts = async () => {
       setLoading(true);
       try {
-        const result = await getFeaturedProducts();
+        const result = await getFeaturedProducts(1, 6); // Load 6 featured products
         if (result.success) {
           setFeaturedProducts(result.products);
         } else {
@@ -144,10 +144,13 @@ const Home = () => {
                 <div key={product.id} className="col-md-4 mb-4">
                   <div className="card h-100">
                     <img
-                      src={product.images ? product.images[0] : product.image}
+                      src={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/300x250?text=No+Image'}
                       className="card-img-top"
                       alt={product.name}
                       style={{ height: '250px', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/300x250?text=No+Image';
+                      }}
                     />
                     <div className="card-body d-flex flex-column">
                       <h5 className="card-title">{product.name}</h5>
