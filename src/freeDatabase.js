@@ -131,11 +131,10 @@ export const addProduct = async (productData) => {
 
 export const updateProduct = async (id, productData) => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('products')
       .update(productData)
       .eq('id', id)
-      .select()
 
     if (error) throw error
 

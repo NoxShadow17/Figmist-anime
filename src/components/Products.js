@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllProducts, getProductsByCategory } from '../freeDatabase';
 import { useCart, useTheme } from '../App';
@@ -63,7 +63,7 @@ const Products = () => {
     setSelectedSize('');
   };
 
-  const loadProducts = async (page = 1, append = false) => {
+  const loadProducts = useCallback(async (page = 1, append = false) => {
     if (append) {
       setLoadingMore(true);
     } else {
@@ -115,7 +115,7 @@ const Products = () => {
 
     setLoading(false);
     setLoadingMore(false);
-  };
+  }, [selectedCategory]);
 
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../App';
 import { getFeaturedProducts } from '../freeDatabase';
 
 // Helper function to calculate discounted price
