@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { useTheme, useCart } from '../App';
 
 const Header = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { toggleTheme } = useTheme();
   const { getCartItemCount } = useCart();
   const cartItemCount = getCartItemCount();
 
   return (
-    <nav className={`navbar navbar-expand-lg ${theme === 'dark' ? 'navbar-dark bg-dark' : 'navbar-light bg-light'}`}>
+    <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container">
         <Link className="navbar-brand" to="/">
           <strong>Figmist</strong>
@@ -39,7 +39,7 @@ const Header = () => {
           <ul className="navbar-nav">
             <li className="nav-item">
               <button className="btn btn-outline-secondary me-2" onClick={toggleTheme}>
-                {theme === 'light' ? '🌙' : '☀️'}
+                🌙
               </button>
             </li>
             <li className="nav-item">

@@ -28,6 +28,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 })
 
+
 // Authentication functions
 export const loginAdmin = async (email, password) => {
   try {
@@ -633,18 +634,6 @@ const cleanupLocalStorage = () => {
   }
 };
 
-// Helper function to convert file to base64
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = error => reject(error);
-  });
-};
 
 // Initialize default data
 const initializeData = () => {
