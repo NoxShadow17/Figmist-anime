@@ -47,26 +47,26 @@ const Footer = () => {
                 <strong className="text-white">Contact Methods:</strong>
                 <div className="mt-2">
                   <a
-                  href="https://wa.me/918981308886"
+                  href="https://wa.me/919302194019"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-success text-decoration-none d-block"
                 >
-                  📱 WhatsApp: +91 89813 08886
+                  📱 WhatsApp: +91 93021 94019
                   </a>
                   <a
-                    href="https://instagram.com/figmist_store"
+                    href="https://www.instagram.com/shop.figmist/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-warning text-decoration-none d-block"
                   >
-                    📸 Instagram: @figmist_store
+                    📸 Instagram: @shop.figmist
                   </a>
                   <a
-                    href="mailto:support@figmist.com"
+                    href="mailto:figmist.co@gmail.com"
                     className="text-primary text-decoration-none d-block"
                   >
-                    ✉️ Email: support@figmist.com
+                    ✉️ Email: figmist.co@gmail.com
                   </a>
                 </div>
               </li>
