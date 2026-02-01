@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loginAdmin, logoutAdmin, addProduct, updateProduct, deleteProduct, getAllProducts, uploadProductImage, checkAdminSession } from '../freeDatabase';
+import { loginAdmin, logoutAdmin, addProduct, updateProduct, deleteProduct, getAllProducts, uploadProductImage } from '../freeDatabase';
 
 const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

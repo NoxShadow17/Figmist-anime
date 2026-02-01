@@ -80,14 +80,13 @@ export const addProduct = async (productData) => {
       dbData.image = dbData.images[0]; // For old schema compatibility
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('products')
       .insert([dbData])
-      .select()
 
     if (error) throw error
 
-    return { success: true, id: data[0].id };
+    return { success: true, id: Date.now().toString() };
   } catch (error) {
     // Fallback to localStorage if Supabase fails
     console.warn('Supabase error, falling back to localStorage:', error.message)

@@ -12,7 +12,6 @@ const calculateDiscountedPrice = (price, discountPercentage, discountActive) => 
 };
 
 const Home = () => {
-  const { theme } = useTheme();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 

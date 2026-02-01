@@ -17,11 +17,9 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProduct = async () => {
-      setLoading(true);
       try {
         const result = await getProductById(id);
         if (result.success) {
@@ -34,7 +32,6 @@ const ProductDetail = () => {
         console.error('Error loading product:', error);
         setProduct(null);
       }
-      setLoading(false);
     };
 
     if (id) {
@@ -76,7 +73,7 @@ const ProductDetail = () => {
                   <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
                     <img
                       src={image}
-                      alt={`${product.name} - Image ${index + 1}`}
+                      alt={`${product.name} - ${index + 1}`}
                       className="d-block w-100 rounded"
                       style={{ maxHeight: '500px', objectFit: 'cover' }}
                     />

@@ -144,7 +144,7 @@ const Products = () => {
 
   useEffect(() => {
     loadProducts(1, false);
-  }, [selectedCategory]); // Reload when category changes
+  }, [selectedCategory, loadProducts]); // Reload when category changes
 
   // Filter products when search term or category changes
   useEffect(() => {
